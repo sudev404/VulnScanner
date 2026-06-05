@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminPanel from './AdminPanel';
 
-const API_URL = 'https://vulnscanner-backend-tfm3.onrender.com/api';
+const API_URL = 'https://vulnscanner-backend-docker.onrender.com/api';
 
 export default function VulnScannerApp() {
   const [token, setToken] = useState(localStorage.getItem('token'));
