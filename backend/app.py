@@ -5,6 +5,7 @@ Enhanced with RBAC, Scheduling, and Reporting
 
 from flask import Flask, jsonify, request, send_file, Response
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, decode_token
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -204,7 +205,7 @@ def health_check():
     """Health check endpoint for Render"""
     try:
         # Test database connection
-        db.session.execute("SELECT 1")
+        db.session.execute(text("SELECT 1"))
         return jsonify({"status": "healthy", "service": "vulnscanner-backend", "database": "ok"}), 200
     except Exception as e:
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
