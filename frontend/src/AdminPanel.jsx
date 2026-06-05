@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API = "http://localhost:5000/api";
+const API = "https://vulnscanner-backend-tfm3.onrender.com/api";
 
 export default function AdminPanel({ token, user }) {
   const [adminTab, setAdminTab] = useState("rbac");
