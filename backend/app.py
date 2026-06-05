@@ -215,6 +215,37 @@ def readiness_check():
     """Readiness check endpoint for Render"""
     return jsonify({"status": "ready", "service": "vulnscanner-backend"}), 200
 
+@app.route("/setup-admin", methods=["POST"])
+def setup_admin():
+    """One-time admin setup - REMOVE AFTER USE"""
+    import uuid
+    existing = User.query.filter_by(username='admin').first()
+    if existing:
+        existing.role = 'admin'
+        existing.can_manage_users = True
+        existing.can_view_all_scans = True
+        existing.is_active = True
+        existing.is_approved = True
+        db.session.commit()
+        return jsonify({"status": "updated", "message": "Promoted to admin"})
+    admin = User(
+        id=str(uuid.uuid4()),
+        username='admin',
+        email='admin@vulnscanner.com',
+        password=generate_password_hash('Admin123!@'),
+        role='admin',
+        can_create_scans=True,
+        can_schedule_scans=True,
+        can_view_all_scans=True,
+        can_manage_users=True,
+        can_export_reports=True,
+        is_active=True,
+        is_approved=True
+    )
+    db.session.add(admin)
+    db.session.commit()
+    return jsonify({"status": "created", "username": "admin", "password": "Admin123!@"})
+
 # ════════════════════════════════════════════════════════════════════════════
 # AUTHENTICATION ENDPOINTS
 # ════════════════════════════════════════════════════════════════════════════
