@@ -62,6 +62,9 @@ db.init_app(app)
 CORS(app)
 jwt = JWTManager(app)
 
+# Scheduler flag to ensure it starts only once
+_scheduler_started = False
+
 # ════════════════════════════════════════════════════════════════════════════
 # RBAC DECORATORS - FIXED VERSION
 # ════════════════════════════════════════════════════════════════════════════
@@ -205,6 +208,11 @@ def health_check():
         return jsonify({"status": "healthy", "service": "vulnscanner-backend", "database": "ok"}), 200
     except Exception as e:
         return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
+@app.route("/ready", methods=["GET"])
+def readiness_check():
+    """Readiness check endpoint for Render"""
+    return jsonify({"status": "ready", "service": "vulnscanner-backend"}), 200
 
 # ════════════════════════════════════════════════════════════════════════════
 # AUTHENTICATION ENDPOINTS
@@ -1241,7 +1249,7 @@ def create_tables():
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# SCHEDULER - runs due scheduled scans every minute
+# SCHEDULER - runs due scheduled scans every minute (FIXED FOR GUNICORN)
 # ════════════════════════════════════════════════════════════════════════════
 
 def run_due_scheduled_scans():
@@ -1288,15 +1296,21 @@ def run_due_scheduled_scans():
             print(f"[Scheduler] Error: {e}")
 
 
-# Start the background scheduler (only in main process, not in Gunicorn workers)
-if not os.environ.get('GUNICORN_CMD_ARGS'):
-    try:
-        scheduler = BackgroundScheduler()
-        scheduler.add_job(run_due_scheduled_scans, "interval", minutes=1, id="scheduled_scans")
-        scheduler.start()
-        print("[Scheduler] Started — checking for due scans every minute")
-    except Exception as e:
-        print(f"[Scheduler] Warning: Could not start scheduler: {e}")
+# Start the background scheduler ONLY ONCE using before_first_request
+# This prevents multiple scheduler instances in Gunicorn workers
+@app.before_request
+def start_scheduler_once():
+    """Start scheduler only once on first request (prevents Gunicorn worker conflicts)"""
+    global _scheduler_started
+    if not _scheduler_started:
+        try:
+            scheduler = BackgroundScheduler()
+            scheduler.add_job(run_due_scheduled_scans, "interval", minutes=1, id="scheduled_scans")
+            scheduler.start()
+            _scheduler_started = True
+            print("[Scheduler] Started successfully — checking for due scans every minute")
+        except Exception as e:
+            print(f"[Scheduler] Warning: Could not start scheduler: {e}")
 
 
 if __name__ == "__main__":
