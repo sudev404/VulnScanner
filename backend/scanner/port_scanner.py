@@ -29,7 +29,7 @@ def run_port_scan(target: str, profile: str = "quick") -> list:
     args = args_map.get(profile, args_map["quick"])
 
     try:
-        nm = nmap.PortScanner()
+        nm = nmap.PortScanner(nmap_search_path=("/usr/bin/nmap",))
         nm.scan(hosts=ip, arguments=args)
         
         for host in nm.all_hosts():

@@ -539,7 +539,7 @@ def run_cve_nmap_scan(target):
     """Run nmap with vuln scripts to detect CVEs"""
     findings = []
     try:
-        nm = nmap.PortScanner()
+        nm = nmap.PortScanner(nmap_search_path=("/usr/bin/nmap",))
         nm.scan(target, arguments="-sV --script vuln -T4 --open")
 
         for host in nm.all_hosts():
@@ -606,7 +606,7 @@ def run_scan_background(flask_app, scan_id, target, profile):
             upd(5, "Initializing scan...")
 
             # ── Phase 1: nmap port scan ───────────────────────────────────────
-            nm = nmap.PortScanner()
+            nm = nmap.PortScanner(nmap_search_path=("/usr/bin/nmap",))
             args_map = {
                 "quick":  "-sT -T4 -Pn --open -p 21,22,23,80,443,445,3306,3389,5900 --script banner -sV",
                 "full":   "-sT -T4 -Pn -A --open -p 1-65535 --script banner,ssl-enum-ciphers -sV",

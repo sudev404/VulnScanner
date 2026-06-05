@@ -332,7 +332,7 @@ def run_nmap_scan(hostname: str, profile: str) -> list:
     }
     findings = []
     try:
-        nm = nmap.PortScanner()
+        nm = nmap.PortScanner(nmap_search_path=("/usr/bin/nmap",))
         nm.scan(hostname, arguments=args_map.get(profile, "-T4 -F"))
 
         for host in nm.all_hosts():
