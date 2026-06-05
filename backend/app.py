@@ -193,6 +193,20 @@ def get_most_common(items):
     return Counter(items).most_common(1)[0][0]
 
 # ════════════════════════════════════════════════════════════════════════════
+# HEALTH CHECK
+# ════════════════════════════════════════════════════════════════════════════
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Health check endpoint for Render"""
+    try:
+        # Test database connection
+        db.session.execute("SELECT 1")
+        return jsonify({"status": "healthy", "service": "vulnscanner-backend", "database": "ok"}), 200
+    except Exception as e:
+        return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
+# ════════════════════════════════════════════════════════════════════════════
 # AUTHENTICATION ENDPOINTS
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -1274,11 +1288,15 @@ def run_due_scheduled_scans():
             print(f"[Scheduler] Error: {e}")
 
 
-# Start the background scheduler
-scheduler = BackgroundScheduler()
-scheduler.add_job(run_due_scheduled_scans, "interval", minutes=1, id="scheduled_scans")
-scheduler.start()
-print("[Scheduler] Started — checking for due scans every minute")
+# Start the background scheduler (only in main process, not in Gunicorn workers)
+if not os.environ.get('GUNICORN_CMD_ARGS'):
+    try:
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(run_due_scheduled_scans, "interval", minutes=1, id="scheduled_scans")
+        scheduler.start()
+        print("[Scheduler] Started — checking for due scans every minute")
+    except Exception as e:
+        print(f"[Scheduler] Warning: Could not start scheduler: {e}")
 
 
 if __name__ == "__main__":
