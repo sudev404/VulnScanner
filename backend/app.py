@@ -52,9 +52,9 @@ from models.database import (
 app = Flask(__name__)
 
 # Configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///vulnscanner.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///vulnscanner.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = 'SrCDK4ih7qlLOlrup6gJeITbpfaWPehv73YYCZ7-mQw'
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'SrCDK4ih7qlLOlrup6gJeITbpfaWPehv73YYCZ7-mQw')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 
 # Initialize extensions
