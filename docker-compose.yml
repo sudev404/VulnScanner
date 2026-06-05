@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  backend:
+    image: python:3.10-slim
+    container_name: vulnscanner-backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-vuln-scanner-prod-2024}
+      SHODAN_API_KEY: ${SHODAN_API_KEY:-}
+    command: |
+      bash -c "
+        apt update && apt install -y nmap crackmapexec &&
+        pip install -r requirements.txt &&
+        gunicorn -w 4 -b 0.0.0.0:5000 --timeout 300 app:app
+      "
+    networks:
+      - vulnscanner
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    image: node:18-alpine
+    container_name: vulnscanner-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    command: |
+      sh -c "
+        npm install &&
+        npm run dev -- --host 0.0.0.0
+      "
+    environment:
+      VITE_API_URL: http://localhost:5000/api
+    networks:
+      - vulnscanner
+    restart: unless-stopped
+
+networks:
+  vulnscanner:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
